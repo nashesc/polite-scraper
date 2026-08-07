@@ -31,6 +31,28 @@ export function loadExistingUpcs() {
   return upcs;
 }
 
+// Same idea as loadExistingUpcs, but keyed on sourceUrl instead of upc.
+// UPC only exists after you've fetched and parsed a book page, so it can't
+// be used to decide whether to fetch in the first place. sourceUrl comes
+// straight from discoverBookUrls(), before any request is made — it's the
+// only field that can actually gate a skip-vs-fetch decision.
+export function loadExistingUrls() {
+  const file = outputFile();
+  if (!fs.existsSync(file)) return new Set();
+
+  const lines = fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean);
+  const urls = new Set();
+  for (const line of lines) {
+    try {
+      const record = JSON.parse(line);
+      if (record.sourceUrl) urls.add(record.sourceUrl);
+    } catch {
+      console.warn('[storage] skipping malformed line in books.jsonl');
+    }
+  }
+  return urls;
+}
+
 // Appends one record at a time rather than holding all 1000 in memory and
 // writing once at the end — a crash at book 999 still leaves the first 998
 // safely on disk instead of losing the whole run.

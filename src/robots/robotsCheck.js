@@ -1,4 +1,4 @@
-function parseRobotTxt(text) {
+function parseRobotsTxt(text) {
    const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
    const groups = []
    let current = null
@@ -36,7 +36,7 @@ function matchesPattern(path, pattern) {
    if (pattern === '') return false
    const hasEndAnchor = pattern.endsWith('$')
    const hasRawPattern = hasEndAnchor ? pattern.slice(0, -1) : pattern
-   const escaped = rawPattern
+   const escaped = hasRawPattern 
       .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
       .replace(/\*/g, '.*')
    const regex = new RegExp('^' + escaped + (hasEndAnchor ? '$' : ''))
