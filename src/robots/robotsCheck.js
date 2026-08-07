@@ -1,5 +1,3 @@
-// Groups robots.txt into { agents: [...], disallow: [...], allow: [...] } blocks,
-// per RFC 9309's grouping rules: consecutive User-agent lines share one rule set.
 function parseRobotTxt(text) {
    const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
    const groups = []
@@ -34,8 +32,6 @@ function parseRobotTxt(text) {
       : { disallow: [], allow: [] }
 }
 
-// robots.txt patterns support * (wildcard) and $ (end anchor). Longest match wins;
-// Allow beats Disallow at equal specificity.
 function matchesPattern(path, pattern) {
    if (pattern === '') return false
    const hasEndAnchor = pattern.endsWith('$')
