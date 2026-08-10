@@ -1,21 +1,16 @@
 {
-  "startTime": "2026-08-10T19:22:02.872Z",
-  "endTime": "2026-08-10T19:22:04.461Z",
-  "durationMs": 1589,
+  "startTime": "2026-08-10T19:29:55.868Z",
+  "endTime": "2026-08-10T19:29:55.936Z",
+  "durationMs": 68,
   "mode": "assignment",
   "cataloguePages": 3,
   "discovered": 60,
-  "skippedResume": 4,
-  "pending": 4,
-  "fetchedOk": 3,
+  "skippedResume": 60,
+  "pending": 0,
+  "fetchedOk": 0,
   "invalid": 0,
-  "failed": 1,
-  "cacheHits": 6,
+  "failedPages": 0,
+  "cacheHits": 3,
   "cacheMisses": 0,
-  "failures": [
-    {
-      "url": "http://books.toscrape.com/catalogue/this-book-does-not-exist_00000/index.html",
-      "message": "Request failed: 404 Not Found for http://books.toscrape.com/catalogue/this-book-does-not-exist_00000/index.html"
-    }
-  ]
+  "failures": []
 }

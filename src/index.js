@@ -125,7 +125,7 @@ async function run() {
       pending: pending.length,
       fetchedOk: stats.fetched,
       invalid: stats.invalid,
-      failed: stats.failed,
+      failedPages: stats.failed,
       cacheHits,
       cacheMisses,
       failures: stats.failures,
