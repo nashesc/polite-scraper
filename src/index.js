@@ -30,7 +30,7 @@ async function run() {
    console.log(`[orchestrator] resuming — ${alreadyScraped.size} book(s) already on disk`);
 
    const allUrls = await discoverBookUrls({ maxPages });
-   let pending = allUrls.filter((url) => !alreadyScraped.has(url));
+   let pending = allUrls.filter((item) => !alreadyScraped.has(item.url));
 
    if (limit) {
       pending = pending.slice(0, limit);
@@ -42,12 +42,13 @@ async function run() {
    const stats = { fetched: 0, failed: 0, failures: [] };
 
    for (let i = 0; i < pending.length; i++) {
-      const url = pending[i];
+      const { url, sourcePage } = pending[i];
       const progress = `${i + 1}/${pending.length}`;
 
       try {
          const html = await fetchHtml(url);
-         const raw = parseBookPage(html, url);
+         const fetchedAt = new Date().toISOString();
+         const raw = parseBookPage(html, url, { sourcePage, fetchedAt });
          const cleaned = cleanBook(raw);
 
          appendRecord(cleaned);

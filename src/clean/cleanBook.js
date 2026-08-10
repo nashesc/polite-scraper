@@ -58,12 +58,17 @@ export function cleanBook(raw) {
 
    return {
       sourceUrl: raw.sourceUrl,
+      sourcePage: raw.sourcePage,
+      fetchedAt: raw.fetchedAt,
       title: raw.title || null,
       price,
+      priceText: raw.priceRaw,
       currencySymbol,
       inStock,
+      availabilityText: raw.availabilityRaw,
       availableCount,
       rating,
+      ratingText: raw.ratingWord,
       upc: raw.upc,
       category: raw.category,
       description,

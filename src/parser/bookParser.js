@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 
-export function parseBookPage(html, pageUrl) {
+export function parseBookPage(html, pageUrl, { sourcePage = null, fetchedAt = null } = {}) {
    const $ = cheerio.load(html);
 
    const info = {};
@@ -23,6 +23,8 @@ export function parseBookPage(html, pageUrl) {
 
    return {
       sourceUrl: pageUrl,
+      sourcePage,
+      fetchedAt,
       title: $('.product_main h1').text().trim(),
       priceRaw: info['Price (incl. tax)'] || null,
       availabilityRaw: info['Availability'] || null,

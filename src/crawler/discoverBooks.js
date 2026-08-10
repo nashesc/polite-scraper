@@ -4,6 +4,7 @@ import { config } from '../config.js';
 
 export async function discoverBookUrls({ maxPages = null } = {}) {
    const discovered = []
+   const bookPages = new Map() // url -> sourcePage (first occurrence wins)
    let currentUrl = config.baseUrl
    let pageCount = 0
 
@@ -17,7 +18,11 @@ export async function discoverBookUrls({ maxPages = null } = {}) {
       $('article.product_pod').each((i, element) => {
          const href = $(element).find('h3 > a').attr('href')
          if (href) {
-            discovered.push(new URL(href, currentUrl).href)
+            const bookUrl = new URL(href, currentUrl).href
+            discovered.push(bookUrl)
+            if (!bookPages.has(bookUrl)) {
+               bookPages.set(bookUrl, currentUrl)
+            }
          }
       })
 
@@ -30,7 +35,7 @@ export async function discoverBookUrls({ maxPages = null } = {}) {
       currentUrl = nextHref ? new URL(nextHref, currentUrl).href : null
    }
 
-   const bookUrls = [...new Set(discovered)]
+   const bookUrls = [...bookPages.entries()].map(([url, sourcePage]) => ({ url, sourcePage }))
    console.log(`[crawler] catalogue_pages=${pageCount}, discovered=${discovered.length}, unique_urls=${bookUrls.length}`)
    return bookUrls
 }
