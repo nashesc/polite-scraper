@@ -4,7 +4,7 @@ import { config } from '../config.js';
 
 export async function discoverBookUrls({ maxPages = null } = {}) {
    const discovered = []
-   const bookPages = new Map() // url -> sourcePage (first occurrence wins)
+   const bookPages = new Map()
    let currentUrl = config.baseUrl
    let pageCount = 0
 
@@ -35,7 +35,7 @@ export async function discoverBookUrls({ maxPages = null } = {}) {
       currentUrl = nextHref ? new URL(nextHref, currentUrl).href : null
    }
 
-   const bookUrls = [...bookPages.entries()].map(([url, sourcePage]) => ({ url, sourcePage }))
-   console.log(`[crawler] catalogue_pages=${pageCount}, discovered=${discovered.length}, unique_urls=${bookUrls.length}`)
-   return bookUrls
+   const urls = [...bookPages.entries()].map(([url, sourcePage]) => ({ url, sourcePage }))
+   console.log(`[crawler] catalogue_pages=${pageCount}, discovered=${discovered.length}, unique_urls=${urls.length}`)
+   return { urls, pageCount }
 }

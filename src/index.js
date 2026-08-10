@@ -1,5 +1,5 @@
 import { discoverBookUrls } from './crawler/discoverBooks.js';
-import { fetchHtml } from './http/fetchHtml.js';
+import { fetchHtml, getFetchStats } from './http/fetchHtml.js';
 import { ensureCacheDir } from './http/cache.js';
 import { parseBookPage } from './parser/bookParser.js';
 import { cleanBook } from './clean/cleanBook.js';
@@ -7,7 +7,9 @@ import { ensureOutputDir, loadExistingUrls, appendRecord } from './storage/write
 import { loadExistingRecords, loadExistingUrlsJson, writeRecordsJson } from './storage/writeRecordsJson.js';
 import { appendError } from './storage/writeErrors.js';
 import { loadExistingErrors, writeErrorsJson } from './storage/writeErrorsJson.js';
+import { writeRunReport } from './storage/writeRunReport.js';
 import { bookRecordSchema } from './schema/bookRecord.js';
+import { config } from './config.js';
 
 const DEFAULT_MAX_PAGES = 3;
 
@@ -22,6 +24,10 @@ function parseFull() {
    return process.argv.includes('--full');
 }
 
+function parseInjectBroken() {
+   return process.argv.includes('--inject-broken');
+}
+
 function mergeByKey(existing, incoming, keyFn) {
    const map = new Map(existing.map((item) => [keyFn(item), item]));
    for (const item of incoming) {
@@ -31,24 +37,30 @@ function mergeByKey(existing, incoming, keyFn) {
 }
 
 async function run() {
+   const startTime = new Date();
    const limit = parseLimit();
    const full = parseFull();
+   const injectBroken = parseInjectBroken();
    const maxPages = full ? null : DEFAULT_MAX_PAGES;
 
    ensureOutputDir();
    ensureCacheDir();
 
-   // full mode: append-as-you-go JSONL (crash-safe, proven at 1000-book scale)
-   // assignment mode: rewrite a single books.json/errors.json array each run (per spec)
    const alreadyScraped = full ? loadExistingUrls() : loadExistingUrlsJson();
    console.log(`[orchestrator] resuming — ${alreadyScraped.size} book(s) already on disk`);
 
-   const allUrls = await discoverBookUrls({ maxPages });
+   const { urls: allUrls, pageCount } = await discoverBookUrls({ maxPages });
    let pending = allUrls.filter((item) => !alreadyScraped.has(item.url));
 
    if (limit) {
       pending = pending.slice(0, limit);
       console.log(`[orchestrator] --limit=${limit} applied — smoke-test run`);
+   }
+
+   if (injectBroken) {
+      const brokenUrl = new URL('/catalogue/this-book-does-not-exist_00000/index.html', config.baseUrl).href;
+      pending.push({ url: brokenUrl, sourcePage: 'injected-test' });
+      console.log(`[orchestrator] --inject-broken applied — added ${brokenUrl}`);
    }
 
    console.log(`[orchestrator] ${allUrls.length} discovered, ${alreadyScraped.size} skipped (resume), ${pending.length} to fetch${limit ? ` (limited from ${allUrls.length - alreadyScraped.size})` : ''}`);
@@ -98,6 +110,26 @@ async function run() {
       writeRecordsJson(mergeByKey(loadExistingRecords(), newRecords, (r) => r.sourceUrl));
       writeErrorsJson(mergeByKey(loadExistingErrors(), newErrors, (e) => e.url));
    }
+
+   const endTime = new Date();
+   const { cacheHits, cacheMisses } = getFetchStats();
+
+   writeRunReport({
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      durationMs: endTime - startTime,
+      mode: full ? 'full' : 'assignment',
+      cataloguePages: pageCount,
+      discovered: allUrls.length,
+      skippedResume: alreadyScraped.size,
+      pending: pending.length,
+      fetchedOk: stats.fetched,
+      invalid: stats.invalid,
+      failed: stats.failed,
+      cacheHits,
+      cacheMisses,
+      failures: stats.failures,
+   });
 
    console.log('[orchestrator] done');
    console.log(`  discovered: ${allUrls.length}`);
