@@ -1,8 +1,11 @@
 import { discoverBookUrls } from './crawler/discoverBooks.js';
-import { politeFetch } from './http/politeClient.js';
+import { fetchHtml } from './http/fetchHtml.js';
+import { ensureCacheDir } from './http/cache.js';
 import { parseBookPage } from './parser/bookParser.js';
 import { cleanBook } from './clean/cleanBook.js';
 import { ensureOutputDir, loadExistingUrls, appendRecord } from './storage/writeRecords.js';
+
+const DEFAULT_MAX_PAGES = 3;
 
 function parseLimit() {
    const arg = process.argv.find((a) => a.startsWith('--limit='));
@@ -11,15 +14,22 @@ function parseLimit() {
    return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function parseFull() {
+   return process.argv.includes('--full');
+}
+
 async function run() {
    const limit = parseLimit();
+   const full = parseFull();
+   const maxPages = full ? null : DEFAULT_MAX_PAGES;
 
    ensureOutputDir();
+   ensureCacheDir();
 
    const alreadyScraped = loadExistingUrls();
    console.log(`[orchestrator] resuming — ${alreadyScraped.size} book(s) already on disk`);
 
-   const allUrls = await discoverBookUrls();
+   const allUrls = await discoverBookUrls({ maxPages });
    let pending = allUrls.filter((url) => !alreadyScraped.has(url));
 
    if (limit) {
@@ -36,8 +46,7 @@ async function run() {
       const progress = `${i + 1}/${pending.length}`;
 
       try {
-         const response = await politeFetch(url);
-         const html = await response.text();
+         const html = await fetchHtml(url);
          const raw = parseBookPage(html, url);
          const cleaned = cleanBook(raw);
 

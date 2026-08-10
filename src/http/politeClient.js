@@ -40,10 +40,13 @@ export async function politeFetch(url, options = {}) {
       await waitForRateLimit();
 
       let response;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), config.requestTimeoutMs);
       try {
          response = await fetch(url, {
          ...options,
          headers: { 'User-Agent': config.userAgent, ...options.headers },
+         signal: controller.signal,
          });
       } catch (err) {
          attempt++;
@@ -54,6 +57,8 @@ export async function politeFetch(url, options = {}) {
          console.warn(`[http] network error on ${url} (attempt ${attempt}/${config.maxRetries}), retrying in ${backoffMs}ms`);
          await sleep(backoffMs);
          continue;
+      } finally {
+         clearTimeout(timeoutId);
       }
 
       if (response.ok) return response;

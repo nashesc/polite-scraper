@@ -6,4 +6,5 @@ export const config = {
   requestDelayMs: Number(process.env.REQUEST_DELAY_MS) || 1000,
   maxRetries: Number(process.env.MAX_RETRIES) || 3,
   outputDir: process.env.OUTPUT_DIR || './data/output',
+  requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS) || 8000,
 };
