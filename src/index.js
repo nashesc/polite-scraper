@@ -4,6 +4,8 @@ import { ensureCacheDir } from './http/cache.js';
 import { parseBookPage } from './parser/bookParser.js';
 import { cleanBook } from './clean/cleanBook.js';
 import { ensureOutputDir, loadExistingUrls, appendRecord } from './storage/writeRecords.js';
+import { bookRecordSchema } from './schema/bookRecord.js';
+import { appendError } from './storage/writeErrors.js';
 
 const DEFAULT_MAX_PAGES = 3;
 
@@ -39,7 +41,7 @@ async function run() {
 
    console.log(`[orchestrator] ${allUrls.length} discovered, ${alreadyScraped.size} skipped (resume), ${pending.length} to fetch${limit ? ` (limited from ${allUrls.length - alreadyScraped.size})` : ''}`);
 
-   const stats = { fetched: 0, failed: 0, failures: [] };
+   const stats = { fetched: 0, failed: 0, failures: [], invalid: 0 };
 
    for (let i = 0; i < pending.length; i++) {
       const { url, sourcePage } = pending[i];
@@ -51,7 +53,15 @@ async function run() {
          const raw = parseBookPage(html, url, { sourcePage, fetchedAt });
          const cleaned = cleanBook(raw);
 
-         appendRecord(cleaned);
+         const validation = bookRecordSchema.safeParse(cleaned);
+         if (!validation.success) {
+            stats.invalid++;
+            appendError({ url, issues: validation.error.issues });
+            console.warn(`[orchestrator] ${progress} INVALID — ${url} — ${validation.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
+            continue;
+         }
+
+         appendRecord(validation.data);
          stats.fetched++;
          console.log(`[orchestrator] ${progress} OK — ${cleaned.title}`);
       } catch (err) {
@@ -66,6 +76,7 @@ async function run() {
    console.log(`  skipped (resume): ${alreadyScraped.size}`);
    console.log(`  fetched OK: ${stats.fetched}`);
    console.log(`  failed: ${stats.failed}`);
+   console.log(`  invalid: ${stats.invalid}`);
    if (stats.failures.length) {
       console.log('  failure detail:', stats.failures);
    }
