@@ -21,13 +21,27 @@ function parseRating(word) {
    return RATING_WORDS[word] ?? null;
 }
 
+function escapeRegExp(str) {
+   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildflexibleProbePattern(probe) {
+   const escaped = escapeRegExp(probe);
+   return escaped.replace(/\s+/g, '\\s+');
+}
+
 function dedupeDescription(text, sourceUrl) {
    if (!text || text.length < 60) return { text, wasDeduped: false };
 
    const probe = text.slice(0, 30);
-   const secondOccurrence = text.indexOf(probe, 15);
+   const pattern = buildFlexibleProbePattern(probe);
+   const regex = new RegExp(pattern);
 
-   if (secondOccurrence > 0) {
+   const searchSpace = text.slice(15);
+   const match = searchSpace.match(regex);
+
+   if (match) {
+      const secondOccurrence = match.index + 15;
       console.warn(`[clean] description dedup fired for ${sourceUrl}`);
       return { text: text.slice(secondOccurrence), wasDeduped: true };
    }
