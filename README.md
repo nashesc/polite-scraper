@@ -115,29 +115,25 @@ Records that fail schema validation (missing title, non-positive price, malforme
 
 ```json
 {
-  "startTime": "2026-08-10T19:27:15.559Z",
-  "endTime": "2026-08-10T19:27:17.044Z",
-  "durationMs": 1485,
+  "startTime": "2026-08-12T23:48:33.535Z",
+  "endTime": "2026-08-12T23:49:38.006Z",
+  "durationMs": 64471,
   "mode": "assignment",
   "cataloguePages": 3,
   "discovered": 60,
-  "skippedResume": 60,
-  "pending": 1,
-  "fetchedOk": 0,
+  "skippedResume": 0,
+  "pending": 60,
+  "fetchedOk": 60,
   "invalid": 0,
-  "failedPages": 1,
-  "cacheHits": 3,
-  "cacheMisses": 0,
-  "failures": [
-    {
-      "url": "http://books.toscrape.com/catalogue/this-book-does-not-exist_00000/index.html",
-      "message": "Request failed: 404 Not Found for http://books.toscrape.com/catalogue/this-book-does-not-exist_00000/index.html"
-    }
-  ]
+  "failedPages": 0,
+  "cacheHits": 0,
+  "cacheMisses": 63,
+  "failures": []
 }
 ```
-(Captured from a `--inject-broken` run against a warm cache — hence `cacheMisses: 0` and the one deliberate failure.)
+(Captured from a cold-start run — `cache/` and `data/output/` cleared before running — proving all 60 books were fetched live rather than resumed from disk. For failure-handling proof, see the `--inject-broken` example under Usage above.)
 
 ## Known limitations
 
-- Description de-duplication uses a first-30-characters probe to detect repeated text. It fires on the large majority of records in this dataset, which is either accurate to how the source site formats descriptions or a sign the probe is over-triggering on shared boilerplate — it was spot-checked but not exhaustively verified against every flagged book, and is worth another pass before treating the corpus as fully trustworthy.
+- Description de-duplication uses a whitespace-tolerant regex match against the first 30 characters to detect repeated text. This fixes a prior false-negative: when the truncated and complete copies of a description had inconsistent spacing (e.g. single-space vs. triple-space at the same position), exact-string matching missed the duplicate and left both copies concatenated in the output. Verified against the full 60-book assignment corpus via a cold-start run; spot-checked in detail against the Tsubasa record, which had this exact failure mode.
+- Deduplication does not normalize whitespace in the retained text — if the source has irregular spacing (e.g. a triple space), that spacing is preserved as-is in the cleaned description.

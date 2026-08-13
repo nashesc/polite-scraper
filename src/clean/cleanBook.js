@@ -25,7 +25,7 @@ function escapeRegExp(str) {
    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function buildflexibleProbePattern(probe) {
+function buildFlexibleProbePattern(probe) {
    const escaped = escapeRegExp(probe);
    return escaped.replace(/\s+/g, '\\s+');
 }
